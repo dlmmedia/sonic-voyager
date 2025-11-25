@@ -162,6 +162,7 @@ export class UIManager {
         this.renderTrackList(); 
 
         this.switchVisuals(track.genre);
+        this.visualizer.setTrackInfo(track);
         this.updateUITheme(track.genre);
         
         // Reset UI timer to ensure controls are visible when track changes
@@ -187,6 +188,8 @@ export class UIManager {
             this.visualizer.setPreset('Energy');
         } else if (lower.includes('electronic') || lower.includes('rave') || lower.includes('phonk')) {
             this.visualizer.setPreset('Grid');
+        } else if (lower.includes('chrome')) {
+            this.visualizer.setPreset('Chrome');
         } else if (lower.includes('cinematic') || lower.includes('poly')) {
             this.visualizer.setPreset('Pentagon'); 
         } else if (lower.includes('future funk') || lower.includes('2000s')) {
@@ -204,6 +207,7 @@ export class UIManager {
         if (lower.includes('ethereal')) color = '#AAEEFF'; // Pastel Blue
         if (lower.includes('dark')) color = '#FF3333'; // Red
         if (lower.includes('energetic')) color = '#33FF33'; // Green
+        if (lower.includes('chrome')) color = '#E0E0E0'; // Chrome/Silver
         
         // Apply to some elements
         document.documentElement.style.setProperty('--accent-color', color); // Assuming CSS var exists or I will use inline

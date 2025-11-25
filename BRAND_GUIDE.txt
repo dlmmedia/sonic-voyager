@@ -19,6 +19,7 @@
 - **Ethereal**: #AAEEFF (Pastel Blue)
 - **Dark**: #FF3333 (Crimson Red)
 - **Energetic**: #33FF33 (Matrix Green)
+- **Chrome**: #E0E0E0 (Chrome Silver)
 
 ## Components
 - **Buttons**:

@@ -45,5 +45,30 @@ export const tracks = [
     { title: "Suno V5 is Here (1)", url: "/Suno V5 is Here (1).mp3", genre: "Experimental" },
     { title: "Suno V5 is Here", url: "/Suno V5 is Here.mp3", genre: "Experimental" },
     { title: "The Edge of Tomorrow", url: "/The Edge of Tomorrow(v5).mp3", genre: "Cinematic" },
-    { title: "Welcome Aboard", url: "/Welcome Aboard the Future Funk Expressway Girl.mp3", genre: "Future Funk" }
+    { title: "Welcome Aboard", url: "/Welcome Aboard the Future Funk Expressway Girl.mp3", genre: "Future Funk" },
+
+    // Chrome and Cadence Album
+    { title: "E-Log Heartbreak", url: "/albums/ChromeAndCadence/01 - E-Log Heartbreak (Can’t Drive When the Log Says No).mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/e_log_heartbreak.png.jpeg" },
+    { title: "Highway Heartbreak", url: "/albums/ChromeAndCadence/02 - Highway Heartbreak.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/highway_heartbreak.png.jpeg" },
+    { title: "Convoy Kings and Queens", url: "/albums/ChromeAndCadence/03 - Title_ Convoy Kings and Queens.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/convoy_kings.png.jpeg" },
+    { title: "The Log Is My Boss", url: "/albums/ChromeAndCadence/04 - The Log Is My Boss.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/log_is_boss.png.jpeg" },
+    { title: "I-10 Run", url: "/albums/ChromeAndCadence/05 - I-10 Run.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/i10_run.png.jpeg" },
+    { title: "Lights of Sin and pure white Snow", url: "/albums/ChromeAndCadence/06 - Lights of Sin and pure white Snow.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/lights_of_sin.png.jpeg" },
+    { title: "I-84 Blues", url: "/albums/ChromeAndCadence/07 - I-84 Blues.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/i84_blues.png.jpeg" },
+    { title: "$5 Diesel, $2 Pay", url: "/albums/ChromeAndCadence/08 - $5 Diesel, $2 Pay (Folk Protest Version).mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/diesel_pay.png.jpeg" },
+    { title: "Pray Down Monteagle", url: "/albums/ChromeAndCadence/09 - Pray Down Monteagle.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/pray_down_monteagle.png.jpeg" },
+    { title: "Gotta Make It Home", url: "/albums/ChromeAndCadence/10 - Gotta Make It Home.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/gotta_make_it_home.png.jpeg" },
+    { title: "I-20 Grind", url: "/albums/ChromeAndCadence/11 - I-20 Grind.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/i20_grind.png.jpeg" },
+    { title: "From Avocados to Evergreens", url: "/albums/ChromeAndCadence/12 - From Avocados to Evergreens.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/Avocados to Evergreens..jpeg" },
+    { title: "Truck Stop Serenade", url: "/albums/ChromeAndCadence/13 - Truck Stop Serenade.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/truck_stop_serenade.png.jpeg" },
+    { title: "Trap Shy", url: "/albums/ChromeAndCadence/14 - Trap Shy.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/trap_shy.png.jpeg" },
+    { title: "Diesel Dreams", url: "/albums/ChromeAndCadence/15 - Diesel Dreams.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/diesel_dreams.png.jpeg" },
+    { title: "Running in the Red", url: "/albums/ChromeAndCadence/16 - Running in the Red.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/running_in_red.png.jpeg" },
+    { title: "I Owe I Roll", url: "/albums/ChromeAndCadence/17 - I Owe I Roll.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/i_owe_i_roll.png.jpeg" },
+    { title: "Coffee, Chrome & Highway Lines", url: "/albums/ChromeAndCadence/18 - Coffee, Chrome & Highway Lines.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/coffee_chrome_lines.png.jpeg" },
+    { title: "No Parking Tonight", url: "/albums/ChromeAndCadence/19 - No Parking Tonight.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/no_parking_tonight.png.jpeg" },
+    { title: "I-40 Blues", url: "/albums/ChromeAndCadence/20 - I - 40 Blues.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/i40_blues.png.jpeg" },
+    { title: "Hell on I-70", url: "/albums/ChromeAndCadence/21 - Hell on I-70 (Rocky Mountain Climb).mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/hell_on_i70.png.jpeg" },
+    { title: "Angel in my blind spot", url: "/albums/ChromeAndCadence/Angel in my blind spot.MP3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/Angel_In_My_Blind_Spot_NoText_Album_Art.png.jpeg" },
+    { title: "Missing Daddy", url: "/albums/ChromeAndCadence/Missing Daddy.mp3", genre: "Chrome", art: "/albums/ChromeAndCadence/art/Missing_Daddy_NoText_Album_Art.png.jpeg" }
 ];

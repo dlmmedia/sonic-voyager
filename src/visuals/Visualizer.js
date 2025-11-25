@@ -12,6 +12,7 @@ import { NeonCity } from './presets/NeonCity.js';
 import { EtherealAura } from './presets/EtherealAura.js';
 import { DarkMatter } from './presets/DarkMatter.js';
 import { EnergyPulse } from './presets/EnergyPulse.js';
+import { ChromeCadenceVisual } from './presets/ChromeCadenceVisual.js';
 
 export class Visualizer {
     constructor(containerId) {
@@ -37,7 +38,8 @@ export class Visualizer {
             'Neon': new NeonCity(this.scene),
             'Ethereal': new EtherealAura(this.scene),
             'Dark': new DarkMatter(this.scene),
-            'Energy': new EnergyPulse(this.scene)
+            'Energy': new EnergyPulse(this.scene),
+            'Chrome': new ChromeCadenceVisual(this.scene)
         };
         
         this.activePreset = this.presets['Grid'];
@@ -88,6 +90,12 @@ export class Visualizer {
             this.activePreset.dispose();
             this.activePreset = this.presets[name];
             this.activePreset.init();
+        }
+    }
+
+    setTrackInfo(track) {
+        if (this.activePreset && typeof this.activePreset.setArtwork === 'function') {
+            this.activePreset.setArtwork(track.art);
         }
     }
 
