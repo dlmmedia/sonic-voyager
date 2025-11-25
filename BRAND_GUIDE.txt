@@ -13,6 +13,13 @@
 - **Accent Primary**: #FFFFFF (Pure White - for high contrast active states)
 - **Accent Secondary**: #333333 (Carbon Fiber - for subtle borders)
 
+### Dynamic Theme Accents (Genre-Based)
+- **Default/Cosmic**: #00F0FF (Cyan)
+- **Cyberpunk**: #FF00FF (Neon Magenta)
+- **Ethereal**: #AAEEFF (Pastel Blue)
+- **Dark**: #FF3333 (Crimson Red)
+- **Energetic**: #33FF33 (Matrix Green)
+
 ## Components
 - **Buttons**:
   - Default: Transparent with 1px solid rgba(255,255,255,0.2)
@@ -27,8 +34,8 @@
   - Backdrop Filter: blur(20px)
   - Border: 1px solid rgba(255, 255, 255, 0.1)
   - Radius: 4px (Sharp, technical corners)
+  - Dynamic Borders: Border colors may adapt to the active genre accent.
 
 ## Icons
 - Style: Minimalist, Stroke-based, White. No fill unless active.
 - Policy: No emojis. Use geometric shapes, text symbols (e.g. >>), or SVG icons.
-

@@ -3,6 +3,10 @@ import { GridTunnel } from './presets/GridTunnel.js';
 import { PentagonalCore } from './presets/PentagonalCore.js';
 import { CircularWave } from './presets/CircularWave.js';
 import { CosmicVoyage } from './presets/CosmicVoyage.js';
+import { NeonCity } from './presets/NeonCity.js';
+import { EtherealAura } from './presets/EtherealAura.js';
+import { DarkMatter } from './presets/DarkMatter.js';
+import { EnergyPulse } from './presets/EnergyPulse.js';
 
 export class Visualizer {
     constructor(containerId) {
@@ -21,7 +25,11 @@ export class Visualizer {
             'Grid': new GridTunnel(this.scene),
             'Pentagon': new PentagonalCore(this.scene),
             'Wave': new CircularWave(this.scene),
-            'Cosmic': new CosmicVoyage(this.scene)
+            'Cosmic': new CosmicVoyage(this.scene),
+            'Neon': new NeonCity(this.scene),
+            'Ethereal': new EtherealAura(this.scene),
+            'Dark': new DarkMatter(this.scene),
+            'Energy': new EnergyPulse(this.scene)
         };
         
         this.activePreset = this.presets['Grid'];

@@ -150,6 +150,7 @@ export class UIManager {
         this.renderTrackList(); 
 
         this.switchVisuals(track.genre);
+        this.updateUITheme(track.genre);
         
         // Reset UI timer to ensure controls are visible when track changes
         this.resetToFullUI();
@@ -163,7 +164,16 @@ export class UIManager {
 
     switchVisuals(genre) {
         const lower = genre.toLowerCase();
-        if (lower.includes('electronic') || lower.includes('rave') || lower.includes('phonk')) {
+        
+        if (lower.includes('cyberpunk')) {
+            this.visualizer.setPreset('Neon');
+        } else if (lower.includes('ethereal')) {
+            this.visualizer.setPreset('Ethereal');
+        } else if (lower.includes('dark')) {
+            this.visualizer.setPreset('Dark');
+        } else if (lower.includes('energetic')) {
+            this.visualizer.setPreset('Energy');
+        } else if (lower.includes('electronic') || lower.includes('rave') || lower.includes('phonk')) {
             this.visualizer.setPreset('Grid');
         } else if (lower.includes('cinematic') || lower.includes('poly')) {
             this.visualizer.setPreset('Pentagon'); 
@@ -172,6 +182,25 @@ export class UIManager {
         } else {
             this.visualizer.setPreset('Cosmic');
         }
+    }
+
+    updateUITheme(genre) {
+        const lower = genre.toLowerCase();
+        let color = '#00F0FF'; // Default Cyan
+
+        if (lower.includes('cyberpunk')) color = '#FF00FF'; // Magenta
+        if (lower.includes('ethereal')) color = '#AAEEFF'; // Pastel Blue
+        if (lower.includes('dark')) color = '#FF3333'; // Red
+        if (lower.includes('energetic')) color = '#33FF33'; // Green
+        
+        // Apply to some elements
+        document.documentElement.style.setProperty('--accent-color', color); // Assuming CSS var exists or I will use inline
+        
+        // Direct manipulation
+        this.playBtn.style.borderColor = color;
+        this.recordBtn.style.borderColor = color;
+        this.statusBadge.style.color = color;
+        this.notifIcon.style.color = color;
     }
 
     togglePlay() {
