@@ -39,3 +39,14 @@
 ## Icons
 - Style: Minimalist, Stroke-based, White. No fill unless active.
 - Policy: No emojis. Use geometric shapes, text symbols (e.g. >>), or SVG icons.
+
+## Visual Effects (Post-Processing)
+- **Bloom**: UnrealBloomPass for neon glow.
+  - Strength: Dynamic (1.2 - 2.0 based on Bass)
+  - Radius: Dynamic (0.4 - 0.6 based on Mids)
+  - Threshold: 0.85
+- **Film Grain**: FilmPass for cinematic texture.
+  - Noise Intensity: 0.35 (base) + beat reaction
+  - Scanlines: 648 count, 0.025 intensity
+  - Grayscale: False
+- **Tone Mapping**: ReinhardToneMapping for realistic lighting range.
