@@ -72,6 +72,15 @@ export class UIManager {
         // Handle Canvas resizing (basic)
         this.resizeCanvases();
         window.addEventListener('resize', () => this.resizeCanvases());
+
+        // Hook up recorder callback
+        this.recorderManager.onRecordingComplete = () => {
+            this.triggerNotification({
+                title: "DOWNLOAD READY",
+                text: "File transfer initiated",
+                icon: "↓"
+            });
+        };
     }
     
     resizeCanvases() {
@@ -121,6 +130,9 @@ export class UIManager {
             console.log('Track ended event fired, isRecording:', this.isRecording);
             if (this.isRecording) {
                 this.stopRecording();
+            } else {
+                // Auto play next track if not recording
+                this.playTrack((this.currentTrackIndex + 1) % tracks.length);
             }
         };
 
@@ -233,59 +245,70 @@ export class UIManager {
     }
 
     async startRecording() {
-        // Get the current track info
-        const track = tracks[this.currentTrackIndex];
-        
-        // Reset track to beginning
-        this.audioManager.setCurrentTime(0);
-        
-        // Get streams
-        const audioStream = this.audioManager.getAudioStream();
-        const canvasElement = this.visualizer.getCanvasElement();
-        
-        // Start recording
-        const sanitizedTitle = track.title.replace(/[^a-z0-9]/gi, '_');
-        await this.recorderManager.startRecording(canvasElement, audioStream, sanitizedTitle);
-        
-        // Start playback
-        this.audioManager.play();
-        this.isPlaying = true;
-        this.isRecording = true;
-        
-        // Update UI
-        this.updatePlayButton();
-        this.recordBtn.classList.add('recording');
-        
-        // Show notification
-        this.triggerNotification({
-            title: "RECORDING STARTED",
-            text: `Capturing: ${track.title}`,
-            icon: "●"
-        });
-        
-        // Reset UI timer
-        this.resetToFullUI();
+        try {
+            // Get the current track info
+            const track = tracks[this.currentTrackIndex];
+            
+            // Reset track to beginning
+            this.audioManager.setCurrentTime(0);
+            
+            // Get streams
+            const audioStream = this.audioManager.getAudioStream();
+            const canvasElement = this.visualizer.getCanvasElement();
+            
+            // Start recording
+            const sanitizedTitle = track.title.replace(/[^a-z0-9]/gi, '_');
+            await this.recorderManager.startRecording(canvasElement, audioStream, sanitizedTitle);
+            
+            // Start playback
+            this.audioManager.play();
+            this.isPlaying = true;
+            this.isRecording = true;
+            
+            // Update UI
+            this.updatePlayButton();
+            this.recordBtn.classList.add('recording');
+            this.recordBtn.style.backgroundColor = '#ff3333';
+            this.recordBtn.style.color = '#ffffff';
+            
+            // Show notification
+            this.triggerNotification({
+                title: "RECORDING STARTED",
+                text: `Capturing: ${track.title}`,
+                icon: "●"
+            });
+            
+            // Reset UI timer
+            this.resetToFullUI();
+        } catch (err) {
+            console.error('Failed to start recording process:', err);
+            this.triggerNotification({
+                title: "RECORDING FAILED",
+                text: "Could not initialize capture",
+                icon: "!"
+            });
+        }
     }
 
     stopRecording() {
         console.log('UIManager.stopRecording called, isRecording:', this.isRecording);
         
         if (!this.isRecording) {
-            console.log('Not recording, returning');
             return;
         }
         
-        console.log('Calling recorderManager.stopRecording()');
         this.recorderManager.stopRecording();
         this.isRecording = false;
         
         // Update UI
         this.recordBtn.classList.remove('recording');
+        this.recordBtn.style.backgroundColor = 'transparent';
+        this.recordBtn.style.color = 'var(--accent-color, #00F0FF)';
         
         // Show notification
         this.triggerNotification({
-            title: "RECORDING COMPLETE",
-            text: "Video download initiated",
+            title: "RECORDING STOPPED",
+            text: "Processing video file...",
             icon: "✓"
         });
         

@@ -7,6 +7,8 @@ export class RecorderManager {
         this.compositeCanvas = null;
         this.compositeCtx = null;
         this.animationFrameId = null;
+        this.stream = null;
+        this.audioStream = null;
     }
 
     async startRecording(canvasElement, audioStream, trackTitle = 'recording') {
@@ -15,97 +17,157 @@ export class RecorderManager {
             return;
         }
 
-        // Create a composite canvas at 1080p (1920x1080)
-        this.compositeCanvas = document.createElement('canvas');
-        this.compositeCanvas.width = 1920;
-        this.compositeCanvas.height = 1080;
-        this.compositeCtx = this.compositeCanvas.getContext('2d', { 
-            alpha: false,
-            desynchronized: true 
-        });
+        try {
+            // Create a composite canvas at 1080p (1920x1080)
+            this.compositeCanvas = document.createElement('canvas');
+            this.compositeCanvas.width = 1920;
+            this.compositeCanvas.height = 1080;
+            this.compositeCtx = this.compositeCanvas.getContext('2d', { 
+                alpha: false,
+                desynchronized: true,
+                willReadFrequently: false
+            });
 
-        // Start capturing the composite canvas
-        this.captureComposite(canvasElement);
+            // Store references
+            this.sourceCanvas = canvasElement;
+            this.audioStream = audioStream;
+            this.trackTitle = trackTitle;
 
-        // Get video stream from composite canvas at 60fps
-        const videoStream = this.compositeCanvas.captureStream(60);
+            // Start capturing the composite canvas
+            this.isRecording = true; // Set flag early for render loop
+            this.captureComposite();
 
-        // Combine video and audio tracks
-        const combinedStream = new MediaStream();
-        
-        // Add video tracks
-        videoStream.getVideoTracks().forEach(track => {
-            combinedStream.addTrack(track);
-        });
-        
-        // Add audio tracks
-        audioStream.getAudioTracks().forEach(track => {
-            combinedStream.addTrack(track);
-        });
+            // Get video stream from composite canvas at 60fps
+            const videoStream = this.compositeCanvas.captureStream(60);
+            
+            // Combine video and audio tracks
+            this.stream = new MediaStream();
+            
+            videoStream.getVideoTracks().forEach(track => {
+                this.stream.addTrack(track);
+            });
+            
+            audioStream.getAudioTracks().forEach(track => {
+                this.stream.addTrack(track);
+            });
 
-        // Determine supported mime type with high quality settings
-        let mimeType;
-        const options = {};
-        
-        if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
-            mimeType = 'video/webm;codecs=vp9,opus';
-            options.mimeType = mimeType;
-            options.videoBitsPerSecond = 15000000; // 15 Mbps for 1080p
-            options.audioBitsPerSecond = 320000;   // 320 kbps
-        } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
-            mimeType = 'video/webm;codecs=vp8,opus';
-            options.mimeType = mimeType;
-            options.videoBitsPerSecond = 15000000;
-            options.audioBitsPerSecond = 320000;
-        } else if (MediaRecorder.isTypeSupported('video/webm')) {
-            mimeType = 'video/webm';
-            options.mimeType = mimeType;
-            options.videoBitsPerSecond = 15000000;
-            options.audioBitsPerSecond = 320000;
-        } else {
-            console.warn('No supported video format found, using default');
+            // Determine supported mime type
+            const options = this.getOptimalRecordingOptions();
+            
+            this.recordedChunks = [];
+            this.mediaRecorder = new MediaRecorder(this.stream, options);
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    this.recordedChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstop = () => {
+                this.handleStop();
+            };
+
+            this.mediaRecorder.onerror = (event) => {
+                console.error('MediaRecorder error:', event);
+                this.stopRecording();
+            };
+
+            // Start recording
+            this.mediaRecorder.start(100); // 100ms chunks
+            console.log(`Recording started: ${options.mimeType} @ 1920x1080`);
+            
+        } catch (err) {
+            console.error('Failed to start recording:', err);
+            this.isRecording = false;
+            this.stopCompositeCapture();
         }
-
-        this.recordedChunks = [];
-        this.trackTitle = trackTitle;
-        this.mediaRecorder = new MediaRecorder(combinedStream, options);
-
-        this.mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-                this.recordedChunks.push(event.data);
-            }
-        };
-
-        this.mediaRecorder.onstop = () => {
-            this.isRecording = false;
-            this.stopCompositeCapture();
-            this.downloadRecording();
-        };
-
-        this.mediaRecorder.onerror = (event) => {
-            console.error('MediaRecorder error:', event);
-            this.isRecording = false;
-            this.stopCompositeCapture();
-        };
-
-        this.mediaRecorder.start(100); // Collect data every 100ms
-        this.isRecording = true;
-        
-        console.log('Recording started with mime type:', mimeType, 'at 1920x1080');
     }
 
-    captureComposite(canvasElement) {
+    getOptimalRecordingOptions() {
+        const types = [
+            'video/webm;codecs=vp9,opus',
+            'video/webm;codecs=vp8,opus',
+            'video/webm;codecs=h264,opus',
+            'video/webm',
+            'video/mp4'
+        ];
+
+        for (const type of types) {
+            if (MediaRecorder.isTypeSupported(type)) {
+                return {
+                    mimeType: type,
+                    videoBitsPerSecond: 15000000, // 15 Mbps
+                    audioBitsPerSecond: 320000    // 320 Kbps
+                };
+            }
+        }
+
+        console.warn('No preferred mime type supported, using defaults');
+        return {
+            videoBitsPerSecond: 8000000,
+            audioBitsPerSecond: 128000
+        };
+    }
+
+    captureComposite() {
         const render = () => {
-            if (!this.isRecording) return;
+            if (!this.isRecording || !this.compositeCtx || !this.sourceCanvas) return;
 
-            // Clear composite canvas
-            this.compositeCtx.fillStyle = '#000000';
-            this.compositeCtx.fillRect(0, 0, 1920, 1080);
+            const ctx = this.compositeCtx;
+            const width = 1920;
+            const height = 1080;
 
-            // Draw the Three.js canvas (scaled to fit 1920x1080)
-            this.compositeCtx.drawImage(canvasElement, 0, 0, 1920, 1080);
+            // Fill background
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
 
-            // Capture UI elements by drawing them on top
+            // Draw source canvas (contain/fit logic to preserve aspect ratio)
+            const sWidth = this.sourceCanvas.width;
+            const sHeight = this.sourceCanvas.height;
+            const sAspect = sWidth / sHeight;
+            const dAspect = width / height;
+
+            let dDrawW, dDrawH, dx, dy;
+
+            if (sAspect > dAspect) {
+                // Source is wider, fit to width
+                dDrawW = width;
+                dDrawH = width / sAspect;
+                dx = 0;
+                dy = (height - dDrawH) / 2;
+            } else {
+                // Source is taller, fit to height
+                dDrawH = height;
+                dDrawW = height * sAspect;
+                dy = 0;
+                dx = (width - dDrawW) / 2;
+            }
+
+            // We want to "cover" the area to avoid black bars if possible, or just draw centered
+            // Current logic: "Letterbox" (fit within). 
+            // If we want "Cover" (fill screen), flip the comparison:
+            /*
+            if (sAspect > dAspect) {
+                // Source is wider, match height to crop sides
+                dDrawH = height;
+                dDrawW = height * sAspect;
+                dy = 0;
+                dx = (width - dDrawW) / 2;
+            } else {
+                // Source is taller, match width to crop top/bottom
+                dDrawW = width;
+                dDrawH = width / sAspect;
+                dx = 0;
+                dy = (height - dDrawH) / 2;
+            }
+            */
+            // Let's stick to "Letterbox" (Contain) for now to ensure all UI is visible, 
+            // or just stretch if close enough? 
+            // Actually, the visualizer is fullscreen, so it should match window aspect.
+            // Let's just draw it full for now as per original code but safer.
+            ctx.drawImage(this.sourceCanvas, 0, 0, width, height);
+
+            // Draw UI elements
             this.drawUIElements();
 
             this.animationFrameId = requestAnimationFrame(render);
@@ -115,90 +177,85 @@ export class RecorderManager {
     }
 
     drawUIElements() {
+        if (!this.compositeCtx) return;
         const ctx = this.compositeCtx;
         
-        // Set up text rendering
-        ctx.textBaseline = 'top';
-        
-        // Scale factor for positioning (assuming original design is for ~1920x1080)
-        const scale = 1920 / window.innerWidth;
+        // Helper for text
+        const drawText = (text, x, y, font, color, align = 'left') => {
+            ctx.fillStyle = color;
+            ctx.font = font;
+            ctx.textAlign = align;
+            ctx.fillText(text, x, y);
+        };
 
-        // Draw logo (top left)
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 28px Orbitron, sans-serif';
-        ctx.fillText('SONIC VOYAGER', 60, 50);
+        // Logo
+        drawText('SONIC VOYAGER', 60, 50, 'bold 28px Orbitron, sans-serif', '#FFFFFF');
 
-        // Draw status badge (top right)
-        const statusBadge = document.getElementById('mode-display');
-        if (statusBadge && !statusBadge.closest('.cinematic-hidden')) {
-            ctx.font = '16px "Share Tech Mono", monospace';
-            ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-            ctx.lineWidth = 1;
-            const badgeText = statusBadge.textContent;
-            const badgeWidth = ctx.measureText(badgeText).width + 24;
-            ctx.strokeRect(1920 - badgeWidth - 60, 45, badgeWidth, 30);
-            ctx.fillText(badgeText, 1920 - badgeWidth - 48, 53);
-        }
+        // Safe access to DOM elements
+        const getElemText = (id) => {
+            const el = document.getElementById(id);
+            return el ? el.textContent : '';
+        };
 
-        // Draw stats cards (left side)
-        const signalCard = document.getElementById('signal-card');
-        const peakCard = document.getElementById('peak-card');
-        
-        if (signalCard && !signalCard.closest('.cinematic-hidden')) {
+        const isHidden = (id) => {
+            const el = document.getElementById(id);
+            return !el || el.closest('.cinematic-hidden');
+        };
+
+        // Stats
+        if (!isHidden('signal-card')) {
             this.drawStatCard(ctx, 60, 150, 'SIGNAL INTENSITY', 
-                document.getElementById('signal-val')?.textContent || '0%',
+                getElemText('signal-val') || '0%',
                 document.getElementById('signal-canvas'));
         }
 
-        if (peakCard && !peakCard.closest('.cinematic-hidden')) {
+        if (!isHidden('peak-card')) {
             this.drawStatCard(ctx, 60, 350, 'PEAK FREQ', 
-                document.getElementById('peak-val')?.textContent || '0 Hz',
+                getElemText('peak-val') || '0 Hz',
                 document.getElementById('peak-canvas'));
         }
 
-        // Draw track list (right side)
-        const trackContainer = document.getElementById('track-container');
-        if (trackContainer && !trackContainer.closest('.cinematic-hidden')) {
+        // Track List
+        if (!isHidden('track-container')) {
             this.drawTrackList(ctx);
         }
 
-        // Draw player controls (bottom)
-        const controlsContainer = document.getElementById('controls-container');
-        if (controlsContainer && !controlsContainer.closest('.cinematic-hidden')) {
+        // Controls
+        if (!isHidden('controls-container')) {
             this.drawPlayerControls(ctx);
         }
 
-        // Draw floating cards
+        // Floating Cards
         this.drawFloatingCards(ctx);
 
-        // Draw notification overlay
+        // Notification
         this.drawNotification(ctx);
     }
 
     drawStatCard(ctx, x, y, label, value, canvas) {
-        // Card background
         ctx.fillStyle = 'rgba(10, 10, 10, 0.85)';
         ctx.fillRect(x, y, 450, 180);
-        
-        // Card border
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
         ctx.lineWidth = 1;
         ctx.strokeRect(x, y, 450, 180);
 
-        // Label
         ctx.fillStyle = '#888888';
         ctx.font = '14px Orbitron, sans-serif';
+        ctx.textAlign = 'left';
         ctx.fillText(label, x + 40, y + 40);
 
-        // Value
         ctx.fillStyle = '#FFFFFF';
         ctx.font = '24px "Share Tech Mono", monospace';
-        const valueWidth = ctx.measureText(value).width;
-        ctx.fillText(value, x + 450 - valueWidth - 40, y + 35);
+        ctx.textAlign = 'right';
+        ctx.fillText(value, x + 410, y + 35);
+        ctx.textAlign = 'left'; // Reset
 
-        // Mini visualizer (if canvas exists)
         if (canvas) {
-            ctx.drawImage(canvas, x + 40, y + 90, 370, 60);
+            try {
+                ctx.drawImage(canvas, x + 40, y + 90, 370, 60);
+            } catch (e) {
+                // Ignore if canvas not ready
+            }
         }
     }
 
@@ -208,19 +265,13 @@ export class RecorderManager {
         const width = 400;
         const height = 800;
 
-        // Card background
         ctx.fillStyle = 'rgba(10, 10, 10, 0.85)';
         ctx.fillRect(x, y, width, height);
-        
-        // Card border
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-        ctx.lineWidth = 1;
         ctx.strokeRect(x, y, width, height);
 
-        // Header
         ctx.fillStyle = 'rgba(255,255,255,0.02)';
         ctx.fillRect(x, y, width, 60);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
         ctx.beginPath();
         ctx.moveTo(x, y + 60);
         ctx.lineTo(x + width, y + 60);
@@ -230,16 +281,14 @@ export class RecorderManager {
         ctx.font = '16px Orbitron, sans-serif';
         ctx.fillText('SEQUENCE QUEUE', x + 40, y + 25);
 
-        // Track items
         const trackItems = document.querySelectorAll('.track-item');
         let offsetY = y + 90;
         
-        trackItems.forEach((item, index) => {
-            if (offsetY > y + height - 80) return; // Don't overflow
+        trackItems.forEach((item) => {
+            if (offsetY > y + height - 80) return;
 
             const isActive = item.classList.contains('active');
             
-            // Track background
             if (isActive) {
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(x + 25, offsetY, width - 50, 60);
@@ -248,7 +297,6 @@ export class RecorderManager {
                 ctx.fillRect(x + 25, offsetY, width - 50, 60);
             }
 
-            // Track text
             const titleEl = item.querySelector('.track-title');
             const genreEl = item.querySelector('.track-genre');
             
@@ -273,29 +321,23 @@ export class RecorderManager {
         const x = 60;
         const width = 1100;
 
-        // Card background
         ctx.fillStyle = 'rgba(10, 10, 10, 0.85)';
         ctx.fillRect(x, y, width, 140);
-        
-        // Card border
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-        ctx.lineWidth = 1;
         ctx.strokeRect(x, y, width, 140);
 
-        // Play button circle
+        // Play button
         ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.arc(x + 70, y + 70, 32, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Play/Pause icon
-        const playBtn = document.getElementById('play-btn');
         ctx.fillStyle = '#FFFFFF';
         ctx.font = '20px sans-serif';
-        ctx.fillText(playBtn?.textContent || '▶', x + 60, y + 60);
+        ctx.textAlign = 'center';
+        ctx.fillText('▶', x + 70, y + 60); // Force play icon for recording
+        ctx.textAlign = 'left';
 
-        // Now playing info
         const titleEl = document.getElementById('current-track-title');
         const artistEl = document.getElementById('current-track-artist');
         
@@ -314,7 +356,6 @@ export class RecorderManager {
 
     drawFloatingCards(ctx) {
         const floatingCards = document.querySelectorAll('.floating-card');
-        
         floatingCards.forEach(card => {
             const rect = card.getBoundingClientRect();
             const opacity = parseFloat(window.getComputedStyle(card).opacity) || 0;
@@ -337,6 +378,7 @@ export class RecorderManager {
                 
                 ctx.fillStyle = '#FFFFFF';
                 ctx.font = '14px "Share Tech Mono", monospace';
+                ctx.textAlign = 'left';
                 ctx.fillText(card.textContent, x + 20, y + 22);
                 ctx.restore();
             }
@@ -351,9 +393,7 @@ export class RecorderManager {
             
             ctx.fillStyle = 'rgba(0,0,0,0.7)';
             ctx.fillRect(x, y, 360, 80);
-            
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-            ctx.lineWidth = 1;
             ctx.strokeRect(x, y, 360, 80);
             
             ctx.strokeStyle = '#FFFFFF';
@@ -368,6 +408,7 @@ export class RecorderManager {
             
             ctx.fillStyle = '#888888';
             ctx.font = '12px Orbitron, sans-serif';
+            ctx.textAlign = 'left';
             ctx.fillText(titleEl?.textContent || '', x + 20, y + 20);
             
             ctx.fillStyle = '#FFFFFF';
@@ -381,42 +422,46 @@ export class RecorderManager {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         }
-        this.compositeCanvas = null;
         this.compositeCtx = null;
+        this.compositeCanvas = null;
+        this.sourceCanvas = null;
     }
 
     stopRecording() {
-        console.log('stopRecording called, isRecording:', this.isRecording);
-        console.log('recordedChunks length:', this.recordedChunks.length);
-        
-        if (this.mediaRecorder && this.isRecording) {
-            console.log('Stopping MediaRecorder, state:', this.mediaRecorder.state);
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
             this.mediaRecorder.stop();
+        } else {
+            // Safety cleanup if stop called but recorder inactive
+            this.isRecording = false;
+            this.stopCompositeCapture();
+        }
+    }
+
+    handleStop() {
+        this.isRecording = false;
+        this.stopCompositeCapture();
+        
+        if (this.recordedChunks.length > 0) {
+            this.downloadRecording();
+        } else {
+            console.warn('No data recorded');
+        }
+        
+        // Notify completion
+        if (this.onRecordingComplete) {
+            this.onRecordingComplete();
         }
     }
 
     downloadRecording() {
-        console.log('downloadRecording called, chunks:', this.recordedChunks.length);
-        
-        if (this.recordedChunks.length === 0) {
-            console.warn('No recorded data to download');
-            return;
-        }
-
         const blob = new Blob(this.recordedChunks, {
-            type: this.mediaRecorder.mimeType || 'video/webm'
+            type: this.mediaRecorder.mimeType
         });
 
-        console.log('Blob created, size:', blob.size, 'bytes');
-
-        // Determine file extension
-        const extension = this.mediaRecorder.mimeType.includes('webm') ? 'webm' : 'mp4';
-        const filename = `${this.trackTitle}.${extension}`;
-        
-        console.log('Downloading file:', filename);
-        
-        // Create download link
+        const extension = this.mediaRecorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
+        const filename = `${this.trackTitle}_${Date.now()}.${extension}`;
         const url = URL.createObjectURL(blob);
+        
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
@@ -425,27 +470,15 @@ export class RecorderManager {
         document.body.appendChild(a);
         a.click();
         
-        console.log('Download triggered');
-        
         // Cleanup
         setTimeout(() => {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            console.log('Cleanup complete');
+            this.recordedChunks = [];
         }, 100);
-
-        console.log(`Recording downloaded: ${filename}`);
-        
-        // Notify completion
-        if (this.onRecordingComplete) {
-            this.onRecordingComplete();
-        }
-
-        this.recordedChunks = [];
     }
 
     getIsRecording() {
         return this.isRecording;
     }
 }
-
