@@ -1,0 +1,34 @@
+# Brand Guide - Sonic Voyager
+
+## Typography
+- **Headings**: 'Orbitron', sans-serif (Bold, Uppercase, Futuristic)
+- **Body**: 'Rajdhani', sans-serif (Clean, Technical)
+- **Monospace**: 'Share Tech Mono', monospace (For data/numbers)
+
+## Colors
+- **Background**: #000000 (Void Black)
+- **Surface**: rgba(10, 10, 10, 0.8) (Deep Space Glass)
+- **Primary Text**: #FFFFFF (Starlight White)
+- **Secondary Text**: #888888 (Titanium Grey)
+- **Accent Primary**: #FFFFFF (Pure White - for high contrast active states)
+- **Accent Secondary**: #333333 (Carbon Fiber - for subtle borders)
+
+## Components
+- **Buttons**:
+  - Default: Transparent with 1px solid rgba(255,255,255,0.2)
+  - Hover: rgba(255,255,255,0.1) background
+  - Active: White background, Black text
+  - Record Button:
+    - Default: Transparent with border, white text
+    - Recording State: rgba(255,0,0,0.1) background, red border (#ff0000), red text
+    - Icon: Pulsing animation when recording
+- **Cards (Bento)**:
+  - Background: rgba(0, 0, 0, 0.7)
+  - Backdrop Filter: blur(20px)
+  - Border: 1px solid rgba(255, 255, 255, 0.1)
+  - Radius: 4px (Sharp, technical corners)
+
+## Icons
+- Style: Minimalist, Stroke-based, White. No fill unless active.
+- Policy: No emojis. Use geometric shapes, text symbols (e.g. >>), or SVG icons.
+
